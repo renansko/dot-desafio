@@ -1,0 +1,14 @@
+[
+  {
+    "query": "How can I select informative data points from a data stream?",
+    "expected_id": "arxiv:2302.08893v4"
+  },
+  {
+    "query": "How do learning curves help choose a machine learning model?",
+    "expected_id": "arxiv:2201.12150v2"
+  },
+  {
+    "query": "How can decisions made by machine learning models be explained?",
+    "expected_id": "arxiv:2304.02381v2"
+  }
+]

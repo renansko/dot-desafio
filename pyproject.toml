@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dot-desafio"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+  "Django==5.2.6",
+  "djangorestframework==3.16.1",
+  "drf-spectacular==0.28.0",
+  "langchain-openai==0.3.35",
+  "langchain-anthropic==0.3.22",
+  "faiss-cpu==1.12.0",
+  "numpy==2.3.3",
+]
+
+[project.optional-dependencies]
+local-embeddings = [
+  "langchain-huggingface==0.3.1",
+  "sentence-transformers==5.1.1",
+]
+dev = [
+  "pytest==8.4.2",
+  "pytest-django==4.11.1",
+  "ruff==0.13.1",
+]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["test_*.py"]
+addopts = "-q"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+exclude = ["**/migrations/**", "apps/brain/**", "tests/brain/**"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "C901"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 5
+
+[tool.setuptools.packages.find]
+include = ["config*", "apps*"]
+namespaces = false
