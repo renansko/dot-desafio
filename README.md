@@ -71,6 +71,10 @@ requisição, provedor e modelo utilizados, duração, erros, timeouts e identif
 da requisição. Prompts, histórico e respostas completos não devem ser registrados,
 por privacidade e custo.
 
+Essa implementação será feita primeiro no projeto
+[`llm-brain-backend`](https://github.com/renansko/llm-brain-backend) e depois aplicada
+a este projeto.
+
 O tracing remoto permanece opcional e desligado por padrão:
 
 ```env
