@@ -1,0 +1,498 @@
+openapi: 3.0.3
+info:
+  title: DOT Desafio API
+  version: 1.0.0
+  description: API de biblioteca, chatbot Python e busca semântica de documentos.
+paths:
+  /api/books/:
+    get:
+      operationId: books_list
+      parameters:
+      - in: query
+        name: author
+        schema:
+          type: string
+        description: Trecho do autor (máximo 200 caracteres).
+      - in: query
+        name: page
+        schema:
+          type: integer
+        description: Página, a partir de 1.
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+        description: Itens por página, de 1 a 100.
+      - in: query
+        name: title
+        schema:
+          type: string
+        description: Trecho do título (máximo 200 caracteres).
+      tags:
+      - books
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BookOutput'
+          description: ''
+    post:
+      operationId: books_create
+      tags:
+      - books
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BookInput'
+            examples:
+              Livro:
+                value:
+                  title: Python em prática
+                  author: Ana Silva
+                  publication_date: '2024-01-15'
+                  summary: Introdução prática à linguagem.
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BookInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BookInput'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookOutput'
+          description: ''
+  /api/chat/:
+    post:
+      operationId: chat_create
+      description: 'Chat Python sem persistência. Limites padrão: pergunta/mensagem
+        4000 caracteres, 20 mensagens e 16000 caracteres totais; configuráveis por
+        CHAT_MAX_*. 400: entrada inválida; 503: configuração/provedor indisponível;
+        504: timeout; 500: erro interno.'
+      tags:
+      - chat
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatInput'
+            examples:
+              PerguntaInicial:
+                value:
+                  question: Como criar uma lista em Python?
+                summary: Pergunta inicial
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ChatInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ChatInput'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatOutput'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatError'
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatError'
+          description: ''
+        '504':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatError'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatError'
+          description: ''
+  /api/schema/:
+    get:
+      operationId: schema_retrieve
+      description: |-
+        OpenApi3 schema for this API. Format can be selected via content negotiation.
+
+        - YAML: application/vnd.oai.openapi
+        - JSON: application/vnd.oai.openapi+json
+      parameters:
+      - in: query
+        name: format
+        schema:
+          type: string
+          enum:
+          - json
+          - yaml
+      - in: query
+        name: lang
+        schema:
+          type: string
+          enum:
+          - af
+          - ar
+          - ar-dz
+          - ast
+          - az
+          - be
+          - bg
+          - bn
+          - br
+          - bs
+          - ca
+          - ckb
+          - cs
+          - cy
+          - da
+          - de
+          - dsb
+          - el
+          - en
+          - en-au
+          - en-gb
+          - eo
+          - es
+          - es-ar
+          - es-co
+          - es-mx
+          - es-ni
+          - es-ve
+          - et
+          - eu
+          - fa
+          - fi
+          - fr
+          - fy
+          - ga
+          - gd
+          - gl
+          - he
+          - hi
+          - hr
+          - hsb
+          - hu
+          - hy
+          - ia
+          - id
+          - ig
+          - io
+          - is
+          - it
+          - ja
+          - ka
+          - kab
+          - kk
+          - km
+          - kn
+          - ko
+          - ky
+          - lb
+          - lt
+          - lv
+          - mk
+          - ml
+          - mn
+          - mr
+          - ms
+          - my
+          - nb
+          - ne
+          - nl
+          - nn
+          - os
+          - pa
+          - pl
+          - pt
+          - pt-br
+          - ro
+          - ru
+          - sk
+          - sl
+          - sq
+          - sr
+          - sr-latn
+          - sv
+          - sw
+          - ta
+          - te
+          - tg
+          - th
+          - tk
+          - tr
+          - tt
+          - udm
+          - ug
+          - uk
+          - ur
+          - uz
+          - vi
+          - zh-hans
+          - zh-hant
+      tags:
+      - schema
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/vnd.oai.openapi:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/yaml:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/vnd.oai.openapi+json:
+              schema:
+                type: object
+                additionalProperties: {}
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/search/:
+    post:
+      operationId: search_create
+      description: 'Busca semântica: query não vazia, até 2000 caracteres; k inteiro
+        de 1 a 20 (padrão 5). Documentos únicos por similaridade cosseno decrescente,
+        com o melhor trecho. Retorna menos que k quando o corpus tem menos documentos,
+        sem limiar mínimo de relevância. 503: índice/modelo indisponível ou incompatível;
+        504: timeout remoto; 500: erro interno.'
+      tags:
+      - search
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchInput'
+            examples:
+              Consulta:
+                value:
+                  query: Como guardar dinheiro para imprevistos?
+                  k: 2
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SearchInput'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SearchInput'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchOutput'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+          description: ''
+        '504':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchError'
+          description: ''
+components:
+  schemas:
+    BookInput:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        author:
+          type: string
+          maxLength: 200
+        publication_date:
+          type: string
+          format: date
+        summary:
+          type: string
+          maxLength: 5000
+      required:
+      - author
+      - publication_date
+      - summary
+      - title
+    BookOutput:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        author:
+          type: string
+        publication_date:
+          type: string
+          format: date
+        summary:
+          type: string
+      required:
+      - author
+      - id
+      - publication_date
+      - summary
+      - title
+    ChatError:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
+    ChatInput:
+      type: object
+      properties:
+        question:
+          type: string
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/HistoryMessage'
+      required:
+      - question
+    ChatOutput:
+      type: object
+      properties:
+        answer:
+          type: string
+      required:
+      - answer
+    HistoryMessage:
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        content:
+          type: string
+      required:
+      - content
+      - role
+    Match:
+      type: object
+      properties:
+        id:
+          type: string
+        source:
+          type: string
+        snippet:
+          type: string
+        score:
+          type: number
+          format: double
+        title:
+          type: string
+        url:
+          type: string
+          format: uri
+        metadata:
+          type: object
+          additionalProperties: {}
+      required:
+      - id
+      - metadata
+      - score
+      - snippet
+      - source
+      - title
+      - url
+    RoleEnum:
+      enum:
+      - user
+      - assistant
+      type: string
+      description: |-
+        * `user` - user
+        * `assistant` - assistant
+    SearchError:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
+    SearchInput:
+      type: object
+      properties:
+        query:
+          type: string
+          maxLength: 2000
+        k:
+          type: integer
+          maximum: 20
+          minimum: 1
+          default: 5
+      required:
+      - query
+    SearchOutput:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Match'
+      required:
+      - results
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid

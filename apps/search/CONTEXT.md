@@ -61,8 +61,10 @@ no cache; a API e a indexação não baixam modelos implicitamente. Instalação
 503 na busca. O extra `local-embeddings` instala LangChain Hugging Face e Sentence Transformers;
 não é necessário para executar os testes determinísticos ou o provedor OpenAI.
 
-O modelo local padrão é multilíngue, produz 384 dimensões e limita a entrada a 128 tokens
+O modelo local padrão é multilíngue (50+ idiomas), produz 384 dimensões e limita a entrada a 128 tokens
 ([model card](https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2)).
+A escolha por um modelo multilíngue viabiliza busca semântica cross-lingual (por exemplo, consultas
+em português recuperando documentos em inglês do corpus ou vice-versa, sem tradução prévia).
 As janelas são em caracteres, não tokens: entradas longas podem ser truncadas pelo modelo.
 O padrão de 400 caracteres favorece textos curtos; ajuste ao corpus/modelo e reconstrua.
 O limite de consulta é 2000 caracteres, contado antes de remover espaços (o texto é preservado).

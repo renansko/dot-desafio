@@ -4,9 +4,9 @@ Estado: Q1, Q2 e Q3 implementadas; demonstração real da Q2 pendente de credenc
 
 | Questão | Contexto | Responsabilidade |
 | --- | --- | --- |
-| Q1 | [Biblioteca](docs/modules/library/CONTEXT.md) | Cadastrar e consultar livros |
-| Q2 | [Chatbot](docs/modules/chat/CONTEXT.md) | Responder perguntas sobre programação Python |
-| Q3 | [Busca semântica](docs/modules/search/CONTEXT.md) | Indexar textos e recuperar documentos por similaridade |
+| Q1 | [Biblioteca](apps/library/CONTEXT.md) | Cadastrar e consultar livros |
+| Q2 | [Chatbot](apps/chat/CONTEXT.md) | Responder perguntas sobre programação Python |
+| Q3 | [Busca semântica](apps/search/CONTEXT.md) | Indexar textos e recuperar documentos por similaridade |
 
 Decisões compartilhadas: [ADRs gerais](docs/adr/0001-arquitetura-do-desafio.md). Decisões específicas ficam no diretório `adr/` de cada contexto quando necessárias.
 

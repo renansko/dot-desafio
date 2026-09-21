@@ -5,6 +5,10 @@ from pathlib import Path
 from apps.search.application.contracts import IndexSpec
 from apps.search.application.errors import SearchUnavailable
 
+# Modelo local padrão: multilíngue (50+ idiomas), 384 dimensões e executável em CPU.
+# O uso deste modelo permite busca semântica cross-lingual (ex.: consultas em português
+# recuperando documentos em inglês e vice-versa), mapeando conceitos equivalentes em línguas
+# distintas para regiões próximas do mesmo espaço vetorial sem exigir tradução prévia.
 LOCAL_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
 

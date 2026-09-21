@@ -166,3 +166,11 @@ def test_schema_is_available_and_documents_limits(client):
     )
     parameters = schema["paths"]["/api/books/"]["get"]["parameters"]
     assert {item["name"] for item in parameters} >= {"title", "author", "page", "page_size"}
+
+
+def test_swagger_ui_is_available(client):
+    response = client.get("/api/docs/")
+
+    assert response.status_code == 200
+    assert "text/html" in response["content-type"]
+    assert b"swagger-ui" in response.content.lower()

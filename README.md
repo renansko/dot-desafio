@@ -66,19 +66,20 @@ Os testes padrão não acessam a rede, não baixam modelos e não exigem credenc
 
 ## Estrutura
 
-- `apps/library/`: cadastro e consulta de livros.
-- `apps/chat/`: caso de uso e adaptadores dos provedores de chat.
-- `apps/search/`: indexação, embeddings e consulta FAISS.
+- `apps/library/`: cadastro e consulta de livros (contém `CONTEXT.md`).
+- `apps/chat/`: caso de uso e adaptadores dos provedores de chat (contém `CONTEXT.md`).
+- `apps/search/`: indexação, embeddings e consulta FAISS (contém `CONTEXT.md` e ADR de persistência).
 - `apps/brain/`: coleta e corpus de documentos para a busca.
 - `config/`: configuração e rotas Django.
 - `tests/`: testes automatizados.
-- `docs/`: contexto dos módulos e decisões arquiteturais.
+- `docs/`: decisões arquiteturais (ADRs), diretrizes de agentes e Brain do projeto.
 
 ## Documentação
 
 - [Mapa dos módulos](CONTEXT-MAP.md)
-- [Contexto da biblioteca](docs/modules/library/CONTEXT.md)
-- [Contexto do chatbot](docs/modules/chat/CONTEXT.md)
-- [Contexto da busca semântica](docs/modules/search/CONTEXT.md)
+- [Contexto da biblioteca](apps/library/CONTEXT.md)
+- [Contexto do chatbot](apps/chat/CONTEXT.md)
+- [Contexto da busca semântica](apps/search/CONTEXT.md)
 - [Decisão de arquitetura](docs/adr/0001-arquitetura-do-desafio.md)
+- [Brain do projeto](docs/brain/index.md)
 - [Issues do projeto](https://github.com/renansko/dot-desafio/issues)
