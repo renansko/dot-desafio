@@ -64,6 +64,22 @@ python manage.py makemigrations --check --dry-run
 
 Os testes padrão não acessam a rede, não baixam modelos e não exigem credenciais.
 
+## Observabilidade
+
+Como próximo passo, os logs locais estruturados devem registrar início e fim da
+requisição, provedor e modelo utilizados, duração, erros, timeouts e identificador
+da requisição. Prompts, histórico e respostas completos não devem ser registrados,
+por privacidade e custo.
+
+O tracing remoto permanece opcional e desligado por padrão:
+
+```env
+LANGSMITH_TRACING=false
+```
+
+O LangSmith pode ser habilitado futuramente para observabilidade avançada, mediante
+configuração explícita e credencial própria.
+
 ## Estrutura
 
 - `apps/library/`: cadastro e consulta de livros.
