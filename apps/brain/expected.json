@@ -10,5 +10,17 @@
   {
     "query": "How can decisions made by machine learning models be explained?",
     "expected_id": "arxiv:2304.02381v2"
+  },
+  {
+    "query": "O que é aprendizagem por reforço e quais seus algoritmos?",
+    "expected_id": "wikipedia:7567306"
+  },
+  {
+    "query": "Como funciona o ajuste fino com feedback humano no ChatGPT?",
+    "expected_id": "wikipedia:7021469"
+  },
+  {
+    "query": "Quais são as redes neurais multicamadas na aprendizagem profunda?",
+    "expected_id": "wikipedia:5219411"
   }
 ]

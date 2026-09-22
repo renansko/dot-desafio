@@ -50,6 +50,168 @@ Documentação interativa da API (Swagger): <http://127.0.0.1:8000/api/docs/>
 
 Schema OpenAPI: <http://127.0.0.1:8000/api/schema/>
 
+## Respostas às três questões
+
+As três respostas compartilham a mesma API Django, mas mantêm domínio, casos de uso e
+adaptadores externos separados. Biblioteca, chatbot e busca podem ser executados e
+testados de forma independente; o chatbot não usa a busca como RAG.
+
+```mermaid
+flowchart LR
+    CLIENT["Cliente HTTP"] --> DRF["Django REST Framework"]
+    DRF --> Q1["Q1 · Biblioteca"]
+    DRF --> Q2["Q2 · Chatbot Python"]
+    DRF --> Q3["Q3 · Busca semântica"]
+    Q1 --> SQLITE["SQLite"]
+    Q2 --> LLM["OpenAI ou Anthropic"]
+    Q3 --> FAISS["Embeddings + FAISS"]
+```
+
+### Questão 1 — API de cadastro e consulta de livros
+
+**Resposta.** Foi implementada uma API REST que cadastra livros em SQLite e os consulta
+com paginação e filtros parciais, sem distinção entre maiúsculas e minúsculas. Os filtros
+`title` e `author`, quando usados juntos, são combinados com `AND`.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor A as Avaliador
+    participant API as POST/GET /api/books/
+    participant UC as Caso de uso
+    participant DB as Django ORM + SQLite
+    A->>API: Cadastra título, autor, data e resumo
+    API->>UC: Dados validados
+    UC->>DB: Salvar livro
+    DB-->>A: 201 + livro com id
+    A->>API: Filtra por title e/ou author
+    API->>UC: Consulta paginada
+    UC->>DB: Buscar livros
+    DB-->>A: 200 + count, links e results
+```
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/books/ \
+  -H 'Content-Type: application/json' \
+  -d '{"title":"Python em prática","author":"Ana Silva","publication_date":"2024-01-15","summary":"Introdução prática à linguagem."}'
+
+curl 'http://127.0.0.1:8000/api/books/?title=python&author=ana&page=1&page_size=20'
+```
+
+O fluxo completo, as validações e os erros estão no
+[contexto da biblioteca](apps/library/CONTEXT.md). A comprovação automatizada é
+`pytest tests/library`.
+
+### Questão 2 — Chatbot sobre programação Python
+
+**Resposta.** Foi implementado `POST /api/chat/` com histórico explícito e sem persistência
+de conversas. A integração LangChain seleciona OpenAI ou Anthropic por configuração. Antes
+da geração, uma camada de confiança avalia o escopo Python e o risco de prompt injection.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor A as Avaliador
+    participant API as POST /api/chat/
+    participant EVAL as Avaliação de confiança
+    participant LLM as OpenAI ou Anthropic
+    A->>API: question + history
+    API->>EVAL: Pergunta e histórico validados
+    alt Fora do escopo ou risco de injeção
+        EVAL-->>A: 200 + orientação para reformular
+    else Pergunta aceita
+        EVAL->>LLM: Sistema + histórico + pergunta
+        LLM-->>A: 200 + answer
+    end
+```
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/chat/ \
+  -H 'Content-Type: application/json' \
+  -d '{"question":"Como criar uma lista em Python?","history":[]}'
+```
+
+Com `TYPESAFE_API_KEY`, a avaliação usa Jev; sem a chave, usa saída estruturada do
+provedor definido em `CHAT_PROVIDER`. Uma pergunta aceita realiza uma avaliação e uma
+geração. A classificação reduz o risco, mas não garante proteção absoluta. Contratos,
+limites e demonstração real estão no [contexto do chatbot](apps/chat/CONTEXT.md) e na
+[camada de confiança](docs/brain/conventions/ChatTrustLayer.md). A comprovação offline é
+`pytest tests/chat`; a integração real é `python -m scripts.demo_chat`.
+
+### Questão 3 — Busca semântica de documentos
+
+**Resposta.** Foi implementado um pipeline que divide o corpus local em trechos, gera
+embeddings por LangChain, persiste vetores e metadados em FAISS e expõe documentos únicos
+ordenados por similaridade em `POST /api/search/`.
+
+```mermaid
+flowchart LR
+    CORPUS["Corpus JSON"] --> SPLIT["Trechos de 400 caracteres<br/>overlap de 60"]
+    SPLIT --> EMB["Embeddings multilíngues"]
+    EMB --> NORM["Normalização L2"]
+    NORM --> INDEX["FAISS IndexFlatIP"]
+    INDEX --> ZIP["Índice ZIP publicado atomicamente"]
+    QUERY["Consulta"] --> EMB
+    INDEX --> RESULT["Top-k documentos únicos<br/>score + trecho + origem"]
+```
+
+O padrão local é `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`
+(384 dimensões, CPU); a alternativa OpenAI é `text-embedding-3-small` (1536 dimensões).
+Como os vetores são normalizados, o produto interno equivale à similaridade de cosseno.
+Mudar corpus, modelo, provedor ou splitter exige reconstruir o índice.
+
+#### Como demonstrar a busca semântica
+
+O comando `python -m scripts.demo_search` reconstrói o índice, consulta a API real no
+mesmo processo e compara o primeiro resultado de cada busca com
+[`apps/brain/expected.json`](apps/brain/expected.json). Para cada caso, imprime status,
+documento, score de similaridade, URL e o trecho mais relevante; qualquer divergência
+encerra o processo com erro.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor A as Avaliador
+    participant CLI as scripts.demo_search
+    participant IDX as index_documents
+    participant API as POST /api/search/
+    participant EXP as expected.json
+    A->>CLI: Executar demonstração
+    CLI->>IDX: Reconstruir índice
+    loop Cada consulta esperada
+        CLI->>API: query + k igual a 1
+        API-->>CLI: Documento + score + trecho
+        CLI->>EXP: Comparar result.id com expected_id
+    end
+    CLI-->>A: Total de acertos ou erro nas divergências
+```
+
+| Consulta de teste | Arquivo do corpus | ID esperado na API | O que avalia |
+| --- | --- | --- | --- |
+| “O que é aprendizagem por reforço e quais seus algoritmos?” | `wikipedia-da9162ac01cf.json` — Aprendizagem por reforço | `wikipedia:7567306` | Conceito central de MDP, Q-Learning e política |
+| “Como funciona o ajuste fino com feedback humano no ChatGPT?” | `wikipedia-d2ca97f062fd.json` — ChatGPT | `wikipedia:7021469` | Relação entre LLM e RLHF |
+| “Quais são as redes neurais multicamadas na aprendizagem profunda?” | `wikipedia-54498ddd50d7.json` — Aprendizagem profunda | `wikipedia:5219411` | Deep learning, CNNs e aproximação universal |
+| “How can I select informative data points from a data stream?” | `arxiv-45f7d7029bdf.json` — Active learning for data streams | `arxiv:2302.08893v4` | Busca em inglês e capacidade multilíngue do modelo |
+
+Os hashes identificam os arquivos coletados; o contrato HTTP retorna os identificadores
+estáveis da terceira coluna. O arquivo de expectativas pode conter casos adicionais de
+regressão.
+
+```bash
+# Após preparar o modelo local conforme apps/search/CONTEXT.md
+python -m scripts.demo_search
+
+# Consulta manual após a indexação
+curl -X POST http://127.0.0.1:8000/api/search/ \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"How can I select informative data points from a data stream?","k":1}'
+```
+
+Detalhes de preparação, compatibilidade, publicação atômica e falhas estão no
+[contexto da busca semântica](apps/search/CONTEXT.md). A comprovação offline é
+`pytest tests/search`; a demonstração com embeddings reais fica separada da suíte para
+não exigir rede, download de modelo ou credenciais nos testes padrão.
+
 ## Endpoints principais
 
 | Método | Endpoint | Descrição |
@@ -83,6 +245,15 @@ curl -X POST http://127.0.0.1:8000/api/search/ \
   -H 'Content-Type: application/json' \
   -d '{"query":"How can I select informative data points from a data stream?","k":1}'
 ```
+
+O chat avalia escopo Python e risco de prompt injection antes de gerar a resposta.
+Com `TYPESAFE_API_KEY`, usa Jev (`TYPESAFE_MODEL=jev-latest`); sem a chave, usa
+saída estruturada do provedor selecionado em `CHAT_PROVIDER` (OpenAI ou Anthropic).
+Uma pergunta aceita custa uma avaliação e uma geração. A classificação reduz o risco,
+mas não garante proteção contra toda injeção nem confiança calibrada.
+Veja [contratos e limites da avaliação](docs/brain/conventions/ChatTrustLayer.md).
+As decisões ficam no stdout e em `var/log/chat-decisions.log`; use
+`tail -f var/log/chat-decisions.log` para confirmar `evaluator=typesafe`.
 
 ## Embeddings e Vector Store
 
