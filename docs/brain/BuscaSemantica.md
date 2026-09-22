@@ -12,3 +12,5 @@ Uma reconstrução é publicada atomicamente, preservando o índice anterior em 
 
 O corpus, a preparação de embeddings, os limites e o contrato HTTP estão em
 [CONTEXT.md](../../apps/search/CONTEXT.md).
+O contrato OpenAPI de `/api/search/` distingue os status 200, 400, 503, 504 e 500 por
+descrição e exemplo; todos os erros mantêm o campo `detail` com mensagem pública segura.

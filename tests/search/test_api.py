@@ -78,3 +78,21 @@ def test_openapi_contract():
     response = APIClient().get("/api/schema/?format=json")
     operation = response.json()["paths"]["/api/search/"]["post"]
     assert set(operation["responses"]) == {"200", "400", "503", "504", "500"}
+
+
+def test_openapi_search_responses_explain_each_status_with_examples():
+    schema = APIClient().get("/api/schema/?format=json").json()
+    responses = schema["paths"]["/api/search/"]["post"]["responses"]
+    expected = {
+        "400": ("Consulta ou quantidade inválida", "Consulta ou quantidade inválida."),
+        "503": ("indisponível", "Dependência indisponível."),
+        "504": ("Tempo limite", "Tempo limite da dependência excedido."),
+        "500": ("Erro interno", "Erro interno do servidor."),
+    }
+    for status, (description, detail) in expected.items():
+        assert description in responses[status]["description"]
+        examples = responses[status]["content"]["application/json"]["examples"]
+        assert any(example["value"] == {"detail": detail} for example in examples.values())
+    assert responses["200"]["description"]
+    examples = responses["200"]["content"]["application/json"]["examples"]
+    assert any(example["value"]["results"][0]["snippet"] for example in examples.values())

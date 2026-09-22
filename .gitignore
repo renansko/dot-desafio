@@ -12,3 +12,7 @@ htmlcov/
 *.faiss
 *.index
 var/search/
+var/log/
+var/evaluation/
+var/evaluation/
+var/evaluation/

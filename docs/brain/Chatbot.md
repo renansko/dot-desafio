@@ -10,5 +10,13 @@ Anthropic pela configuração e usa LangChain para construir mensagens e invocar
 OpenAI é o padrão. A demonstração real com OpenAI foi validada pelo responsável pelo projeto,
 com LangChain registrando a execução. Credenciais e conteúdo de conversas não entram no projeto.
 
+## Camada de confiança
+
+Antes da geração, uma avaliação de escopo Python e risco de injeção decide se a
+pergunta pode prosseguir. Usa Jev quando há `TYPESAFE_API_KEY`; sem ela, saída
+estruturada do provedor do chat. Recusas são respostas fixas; falhas da avaliação
+bloqueiam a geração. Política, limites e cuidados de medição estão em
+[Camada de confiança do Chat](conventions/ChatTrustLayer.md).
+
 Limites, variáveis de ambiente, contrato HTTP e mapeamento de falhas estão em
 [CONTEXT.md](../../apps/chat/CONTEXT.md).

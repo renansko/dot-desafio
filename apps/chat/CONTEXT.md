@@ -1,7 +1,10 @@
 # Chatbot — Q2
 
-Estado: implementado e validado com OpenAI real; LangChain está com tracing habilitado no ambiente
-de demonstração.
+Estado: chat validado anteriormente com OpenAI real; camada de avaliação prévia
+implementada com testes offline, ainda sem validação semântica real.
+
+Há um relato de recusa indevida de pergunta sobre serializers do DRF, pendente de
+diagnóstico, registrado em [dificuldades e limitações](../../docs/dificuldades.md).
 
 ## Responsabilidade e boundaries
 
@@ -12,7 +15,9 @@ interface específica de provedor e caso de uso, sem Django/LangChain/FAISS.
 O histórico é explícito; cada chamada contém apenas as mensagens enviadas nessa requisição.
 A instrução do sistema é criada pelo servidor e enviada separadamente. Histórico admite somente
 `user`/`assistant`; instruções em texto continuam sendo conteúdo não confiável. O escopo Python
-é orientado pelo prompt, não uma garantia de classificação semântica.
+é avaliado antes da geração, junto com risco de prompt injection. A avaliação reduz o risco,
+mas não garante segurança. Contrato e política em
+[ChatTrustLayer](../../docs/brain/conventions/ChatTrustLayer.md).
 
 ## Contrato HTTP
 
@@ -28,6 +33,10 @@ Resposta 200 (ilustrativa; texto varia com o modelo):
 {"answer":"Use colchetes: numeros = [1, 2, 3]."}
 ```
 
+Para escopo Python abaixo de 0,85 ou risco de injeção a partir de 0,15, retorna 200 com
+`{"answer":"Posso ajudar com programação Python. Reformule sua pergunta nesse contexto."}`,
+sem geração. A avaliação considera todo o histórico; os scores ficam internos à aplicação.
+
 Continuação:
 
 ```json
@@ -42,7 +51,7 @@ Schema OpenAPI: `/api/schema/`; interface: `/api/docs/`.
 | Status | Condição | Exemplo de corpo |
 | --- | --- | --- |
 | 400 | Estrutura inválida, papel proibido, texto vazio ou limite excedido | `{"detail":"Pergunta ou histórico inválido."}` |
-| 503 | Configuração inválida/ausente, autenticação, rate limit, indisponibilidade ou resposta sem texto | `{"detail":"Dependência indisponível."}` |
+| 503 | Configuração inválida/ausente, autenticação, rate limit, avaliação inválida/indisponível ou resposta sem texto | `{"detail":"Dependência indisponível."}` |
 | 504 | Timeout do SDK | `{"detail":"Tempo limite da dependência excedido."}` |
 | 500 | Falha inesperada | `{"detail":"Erro interno do servidor."}` |
 
@@ -58,6 +67,9 @@ carregado automaticamente: exporte as variáveis antes de iniciar o servidor.
 | CHAT_PROVIDER | openai | openai ou anthropic; sem fallback |
 | CHAT_MODEL | obrigatório | Modelo disponível na conta do provedor selecionado |
 | OPENAI_API_KEY / ANTHROPIC_API_KEY | obrigatório | Somente chave do provedor selecionado |
+| TYPESAFE_API_KEY | vazia | Presente: avaliação via Jev; ausente: saída estruturada do provedor do chat |
+| TYPESAFE_MODEL | jev-latest | Modelo Jev; usado somente com chave TypeSafe |
+| CHAT_DECISION_LOG_PATH | var/log/chat-decisions.log | Auditoria JSONL; 5 MB por arquivo e três backups |
 | CHAT_TIMEOUT_SECONDS | 30 | Inteiro positivo; timeout de rede do SDK, sem retries |
 | CHAT_MAX_OUTPUT_TOKENS | 1024 | Inteiro positivo, teto enviado ao modelo |
 | CHAT_MAX_QUESTION_CHARS | 4000 | Inteiro positivo |
@@ -68,9 +80,26 @@ carregado automaticamente: exporte as variáveis antes de iniciar o servidor.
 
 Caracteres são pontos de código Python (`len`), incluindo espaços; limites são inclusivos.
 O total exclui papéis e instrução de sistema. Esses limites reduzem tamanho/custo, mas não
-substituem a janela de tokens específica de cada modelo. Timeout não é um prazo global HTTP.
+substituem a janela de tokens específica de cada modelo. Timeout não é um prazo global HTTP:
+avaliação e geração são sequenciais, cada uma com seu timeout. Falhas da avaliação nunca
+liberam geração nem causam troca de avaliador. OpenAI exige modelo com JSON Schema;
+Anthropic usa saída estruturada por tool calling, sem ferramentas executáveis.
+Jev é integrado via HTTP com duas perguntas Noul por requisição, sem atualizar LangChain.
+Com TypeSafe, pergunta e histórico também são enviados a esse provedor.
 LangSmith fica explicitamente desativado por padrão, inclusive se houver configuração legada
 `LANGCHAIN_TRACING_V2`; quando ativado, usa também `LANGSMITH_PROJECT` opcional.
+
+Cada avaliação concluída gera um evento `chat_assessment` no stdout do servidor e no arquivo
+definido por `CHAT_DECISION_LOG_PATH`. O evento registra avaliador (`typesafe`, `openai` ou
+`anthropic`), modelo, request ID quando fornecido, scores, limites, decisão e duração. Não
+registra pergunta, histórico ou credenciais. `decision=reject_scope` indica escopo abaixo do
+limite; `reject_injection`, risco no limite ou acima; `generate`, chamada geradora autorizada.
+Assim, `evaluator=typesafe` é a evidência de que aquela requisição usou Jev. A chamada HTTP
+direta ao Jev não aparece no LangSmith.
+
+```bash
+tail -f var/log/chat-decisions.log
+```
 
 ## Testes e demonstração real
 
@@ -79,14 +108,27 @@ LangSmith fica explicitamente desativado por padrão, inclusive se houver config
 .venv/bin/ruff check config apps tests/library tests/chat scripts manage.py
 ```
 
-Validação realizada: 132 testes da suíte completa passaram; Ruff/C901, schema OpenAPI
-e checagem de migrations também passaram.
-
 Testes bloqueiam conexões de rede no módulo, usam doubles para ambos os provedores e
 exercitam os construtores LangChain sem invocar modelos. Cobrem sucesso, continuação,
-configuração, falhas externas e entradas imediatamente abaixo/no/acima de cada limite.
+configuração, falhas externas, seleção de Jev, saída estruturada, bloqueio da geração e
+entradas imediatamente abaixo/no/acima de cada limite. Não medem precisão semântica real.
 
-Demonstração real **separada da suíte**, com custo de duas chamadas OpenAI:
+Uma avaliação real opcional usa os 100 casos rotulados em `evaluation/chat.json`:
+
+```bash
+python manage.py eval_chat
+```
+
+O comando faz uma chamada ao avaliador por caso e grava métricas e casos incorretos
+em `var/evaluation/chat.json`. Os limites padrão são 95% de acurácia, até 5% de
+bloqueios indevidos e zero ataques aceitos; as flags `--min-accuracy`,
+`--max-legitimate-block-rate` e `--max-attack-acceptance-rate` permitem ajustá-los.
+Falhas externas reprovam a execução sem gravar detalhes. O conjunto e as metas são
+testes exploratórios do projeto, não requisitos do PDF nem evidência de qualidade
+até serem executados com uma integração real.
+
+Demonstração real **separada da suíte**, com duas requisições HTTP. Quando aceitas,
+custam quatro chamadas externas: duas avaliações e duas gerações:
 
 ```bash
 source .venv/bin/activate

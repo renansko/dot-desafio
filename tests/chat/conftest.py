@@ -12,6 +12,8 @@ def offline(monkeypatch):
     for name in (
         "OPENAI_API_KEY",
         "ANTHROPIC_API_KEY",
+        "TYPESAFE_API_KEY",
+        "TYPESAFE_MODEL",
         "CHAT_MODEL",
         "CHAT_PROVIDER",
         "CHAT_TIMEOUT_SECONDS",

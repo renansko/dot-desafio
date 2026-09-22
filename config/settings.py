@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -12,6 +13,7 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "apps.library.apps.LibraryConfig",
     "apps.search",
+    "apps.chat",
 ]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -41,6 +43,36 @@ DATABASES = {
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 USE_TZ = True
 LANGUAGE_CODE = "pt-br"
+
+CHAT_DECISION_LOG_PATH = Path(
+    os.environ.get("CHAT_DECISION_LOG_PATH", BASE_DIR / "var/log/chat-decisions.log")
+)
+CHAT_DECISION_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {"message_only": {"format": "%(message)s"}},
+    "handlers": {
+        "chat_decision_console": {
+            "class": "logging.StreamHandler",
+            "formatter": "message_only",
+        },
+        "chat_decision_file": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": str(CHAT_DECISION_LOG_PATH),
+            "maxBytes": 5_000_000,
+            "backupCount": 3,
+            "formatter": "message_only",
+        },
+    },
+    "loggers": {
+        "apps.chat.decision": {
+            "handlers": ["chat_decision_console", "chat_decision_file"],
+            "level": "INFO",
+            "propagate": False,
+        }
+    },
+}
 
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",

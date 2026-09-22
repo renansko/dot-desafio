@@ -136,7 +136,9 @@ provedor definido em `CHAT_PROVIDER`. Uma pergunta aceita realiza uma avaliaçã
 geração. A classificação reduz o risco, mas não garante proteção absoluta. Contratos,
 limites e demonstração real estão no [contexto do chatbot](apps/chat/CONTEXT.md) e na
 [camada de confiança](docs/brain/conventions/ChatTrustLayer.md). A comprovação offline é
-`pytest tests/chat`; a integração real é `python -m scripts.demo_chat`.
+`pytest tests/chat`; a integração real é `python -m scripts.demo_chat`. A suíte exploratória
+rotulada também pode ser executada com `python manage.py eval_chat`, usando credenciais do
+avaliador configurado.
 
 ### Questão 3 — Busca semântica de documentos
 
@@ -317,6 +319,7 @@ python -m scripts.demo_chat
 
 ## Documentação
 
+- [Dificuldades e limitações observadas](docs/dificuldades.md)
 - [Mapa dos módulos](CONTEXT-MAP.md)
 - [Contexto da biblioteca](apps/library/CONTEXT.md)
 - [Contexto do chatbot](apps/chat/CONTEXT.md)

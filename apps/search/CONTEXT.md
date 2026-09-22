@@ -168,6 +168,8 @@ Resultados únicos em relevância decrescente. Se `k` superar o número de docum
 somente os disponíveis com 200. Corpus vazio nunca publica um índice. Erros usam `{"detail":"..."}`:
 400 para consulta/quantidade inválida; 503 para configuração, índice ausente/incompatível/corrompido
 ou embeddings indisponíveis; 504 para timeout remoto; 500 para falha inesperada sem detalhes internos.
+A documentação OpenAPI descreve cada status separadamente e mostra exemplos ilustrativos do
+corpo de sucesso e dos erros; os exemplos não são respostas de uma consulta executada.
 A validação de entrada acontece antes de carregar índice/modelo. Contratos, limites e respostas
 estão em `/api/schema/` e `/api/docs/`.
 
