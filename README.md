@@ -84,6 +84,36 @@ curl -X POST http://127.0.0.1:8000/api/search/ \
   -d '{"query":"How can I select informative data points from a data stream?","k":1}'
 ```
 
+## Embeddings e Vector Store
+
+O comando `index_documents` transforma o corpus local em um artefato FAISS pesquisável.
+O processo é explícito: mudar corpus, provedor, modelo ou splitter exige reconstruir o índice.
+
+```mermaid
+flowchart TD
+    A["Corpus JSON (apps/brain/documents/)"] --> B["Chunking / Splitter (use_cases.py)"]
+    B -->|"Janelas de 400 caracteres com overlap de 60"| C["Geração de Embeddings (embeddings.py)"]
+    C -->|"OpenAI text-embedding-3-small ou Local SentenceTransformers"| D["Vetores Unitários Normalizados"]
+    D --> E["Vector Store FAISS IndexFlatIP (faiss_index.py)"]
+    E -->|"Similaridade de Cosseno (Produto Interno)"| F["Publicação Atômica em ZIP (var/search/index.zip)"]
+```
+
+- **Coleta e ingestão:** cada JSON preserva `identifier`, `title`, `text`, `url`,
+  `source` e os metadados de citação — inclusive idioma quando fornecido pela coleta.
+- **Chunking:** textos longos viram janelas de até 400 caracteres com sobreposição de
+  60; cada trecho conserva o offset no texto original.
+- **Embeddings:** o padrão local é
+  `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` (multilíngue,
+  384 dimensões, CPU, sem download implícito). A alternativa OpenAI é
+  `text-embedding-3-small` (1536 dimensões).
+- **Índice e publicação:** o FAISS `IndexFlatIP` recebe vetores normalizados em L2,
+  portanto produto interno equivale à similaridade de cosseno. `vectors.faiss` e
+  `metadata.json` são gravados em ZIP, validados por SHA-256 e publicados com
+  `os.replace`, sem expor uma geração parcial.
+
+Detalhes de limites, compatibilidade e falhas estão no
+[contexto da busca semântica](apps/search/CONTEXT.md).
+
 ## Testes e qualidade
 
 ```bash

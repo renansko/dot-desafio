@@ -41,6 +41,39 @@ Consultas já iniciadas mantêm o snapshot lido; a próxima abre a versão publi
 concorrentes publicam versões completas; a última publicação vence. Não há atualização incremental.
 Veja [ADR da persistência](adr/0001-persistencia-atomica.md).
 
+## Pipeline de embeddings e Vector Store
+
+O pipeline transforma o corpus em um único artefato local compatível com a configuração usada
+na consulta. O diagrama usa os valores padrão; eles podem ser configurados dentro dos limites
+documentados abaixo.
+
+```mermaid
+flowchart TD
+    A["Corpus JSON (apps/brain/documents/)"] --> B["Chunking / Splitter (use_cases.py)"]
+    B -->|"Janelas de 400 caracteres com overlap de 60"| C["Geração de Embeddings (embeddings.py)"]
+    C -->|"OpenAI text-embedding-3-small ou Local SentenceTransformers"| D["Vetores Unitários Normalizados"]
+    D --> E["Vector Store FAISS IndexFlatIP (faiss_index.py)"]
+    E -->|"Similaridade de Cosseno (Produto Interno)"| F["Publicação Atômica em ZIP (var/search/index.zip)"]
+```
+
+1. **Coleta e ingestão:** `apps/brain/collect_corpus.py` persiste um JSON por documento.
+   O indexador exige `identifier`, `source` e `text`; preserva título, URL e metadados,
+   incluindo idioma quando informado pelo coletor.
+2. **Chunking:** `application/use_cases.py` cria janelas de até 400 caracteres com
+   sobreposição de 60, preservando o offset de cada trecho no texto original.
+3. **Embeddings:** `infrastructure/embeddings.py` usa o modelo local
+   `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` (CPU, multilíngue,
+   384 dimensões e somente cache local) ou `text-embedding-3-small` da OpenAI
+   (1536 dimensões). O modelo local não é baixado implicitamente.
+4. **Vector Store:** `infrastructure/faiss_index.py` normaliza vetores em L2 e os grava
+   no `IndexFlatIP`; assim, o produto interno é a similaridade de cosseno. O artefato ZIP
+   contém `vectors.faiss` e `metadata.json`, verifica SHA-256 e é publicado atomicamente
+   em `var/search/index.zip` via `os.replace`.
+
+Referências: [splitter](application/use_cases.py),
+[embeddings](infrastructure/embeddings.py) e
+[índice FAISS](infrastructure/faiss_index.py).
+
 ## Configuração e limites
 
 Django não lê `.env` automaticamente: exporte as variáveis indicadas em `.env.example`.
