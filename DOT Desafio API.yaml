@@ -39,9 +39,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/BookOutput'
+                $ref: '#/components/schemas/BookPage'
           description: ''
     post:
       operationId: books_create
@@ -302,7 +300,7 @@ paths:
             examples:
               Consulta:
                 value:
-                  query: Como guardar dinheiro para imprevistos?
+                  query: Como explicar decisões tomadas por modelos de machine learning?
                   k: 2
           application/x-www-form-urlencoded:
             schema:
@@ -388,6 +386,29 @@ components:
       - publication_date
       - summary
       - title
+    BookPage:
+      type: object
+      properties:
+        count:
+          type: integer
+          minimum: 0
+        next:
+          type: string
+          format: uri
+          nullable: true
+        previous:
+          type: string
+          format: uri
+          nullable: true
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BookOutput'
+      required:
+      - count
+      - next
+      - previous
+      - results
     ChatError:
       type: object
       properties:

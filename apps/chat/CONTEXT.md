@@ -1,6 +1,7 @@
 # Chatbot — Q2
 
-Estado: implementado; demonstração com OpenAI real pendente de credencial.
+Estado: implementado e validado com OpenAI real; LangChain está com tracing habilitado no ambiente
+de demonstração.
 
 ## Responsabilidade e boundaries
 
@@ -101,7 +102,8 @@ python manage.py runserver
 O script faz duas requisições HTTP ao servidor local: a pergunta exigida e uma continuação
 com a resposta real anterior no histórico. Verifique se a primeira explica criação de listas
 e a segunda explica adição de itens. Não registrar credenciais na evidência.
-A execução real ainda não foi feita: o ambiente de implementação não possui OPENAI_API_KEY.
+A demonstração real foi executada com OpenAI pelo responsável pelo projeto. Não registrar
+credenciais nem respostas que possam conter dados sensíveis na evidência.
 
 Referências dos adaptadores: [ChatOpenAI](https://reference.langchain.com/python/langchain-openai/chat_models/base/ChatOpenAI)
 e [ChatAnthropic](https://reference.langchain.com/python/langchain-anthropic/chat_models/ChatAnthropic).

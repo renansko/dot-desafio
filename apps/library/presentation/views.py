@@ -12,6 +12,7 @@ from apps.library.presentation.serializers import (
     BookFilterSerializer,
     BookInputSerializer,
     BookOutputSerializer,
+    BookPageSerializer,
 )
 
 
@@ -50,7 +51,7 @@ class BookListCreateView(APIView):
             OpenApiParameter("page", int, description="Página, a partir de 1."),
             OpenApiParameter("page_size", int, description="Itens por página, de 1 a 100."),
         ],
-        responses={200: BookOutputSerializer(many=True)},
+        responses={200: BookPageSerializer},
     )
     def get(self, request: Request) -> Response:
         filters = BookFilterSerializer(data=request.query_params)

@@ -88,8 +88,14 @@ def html_to_text(html: str) -> str:
 
 
 def wikipedia_documents(
-    topic: str, limit: int, sleep_seconds: float = 1.1, opener: Opener = urlopen
+    topic: str,
+    limit: int,
+    sleep_seconds: float = 1.1,
+    language: str = "en",
+    opener: Opener = urlopen,
 ) -> list[CorpusDocument]:
+    api_url = f"https://{language}.wikipedia.org/w/api.php"
+    rest_api = f"https://{language}.wikipedia.org/w/rest.php/v1"
     query = urlencode(
         {
             "action": "query",
@@ -100,12 +106,12 @@ def wikipedia_documents(
             "format": "json",
         }
     )
-    pages = request_json(f"{WIKIPEDIA_API}?{query}", opener).get("query", {}).get("search", [])
+    pages = request_json(f"{api_url}?{query}", opener).get("query", {}).get("search", [])
     documents = []
     for page in pages:
         title = page["title"]
         key = quote(title.replace(" ", "_"), safe="")
-        text = html_to_text(request_text(f"{WIKIPEDIA_REST_API}/page/{key}/html", opener))
+        text = html_to_text(request_text(f"{rest_api}/page/{key}/html", opener))
         if text:
             documents.append(
                 CorpusDocument(
@@ -113,11 +119,11 @@ def wikipedia_documents(
                     source="wikipedia",
                     title=title,
                     text=text,
-                    url=f"https://en.wikipedia.org/wiki/{key}",
+                    url=f"https://{language}.wikipedia.org/wiki/{key}",
                     metadata={
                         "topic": topic,
                         "license": "CC BY-SA 4.0",
-                        "language": "en",
+                        "language": language,
                         "page_id": page["pageid"],
                     },
                 )
@@ -203,6 +209,9 @@ def parse_args() -> argparse.Namespace:
         "--target-total", type=int, help="Total de documentos distintos desejado no diretório de saída."
     )
     parser.add_argument(
+        "--language", default="en", help="Código do idioma para a Wikipedia (ex: pt, en). Padrão: en."
+    )
+    parser.add_argument(
         "--wikipedia-sleep-seconds", type=float, default=1.1, help="Pausa entre artigos (padrão: 1.1)."
     )
     parser.add_argument("--sleep-seconds", type=float, default=3, help="Pausa entre consultas ao arXiv.")
@@ -214,7 +223,14 @@ def main() -> None:
     documents: list[CorpusDocument] = []
     for topic in args.topic:
         if args.wikipedia_limit:
-            documents.extend(wikipedia_documents(topic, args.wikipedia_limit, args.wikipedia_sleep_seconds))
+            documents.extend(
+                wikipedia_documents(
+                    topic,
+                    args.wikipedia_limit,
+                    args.wikipedia_sleep_seconds,
+                    language=args.language,
+                )
+            )
         if args.arxiv_limit:
             documents.extend(arxiv_documents(topic, args.arxiv_limit))
             time.sleep(args.sleep_seconds)

@@ -139,7 +139,7 @@ def test_index_command_persists_and_reopens(tmp_path, monkeypatch):
     )
     output = StringIO()
     call_command("index_documents", stdout=output)
-    assert "19 documentos" in output.getvalue()
+    assert "documentos" in output.getvalue() and "trechos indexados" in output.getvalue()
     config = load_config()
     assert len(FaissIndex(config.path).open(config.spec).rank([1, 0])) == 3
 

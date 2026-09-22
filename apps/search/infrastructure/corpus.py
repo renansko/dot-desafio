@@ -28,8 +28,10 @@ def document_from_json(path):
     identifier = payload.get("identifier")
     source = payload.get("source")
     text = payload.get("text")
-    if not all(isinstance(value, str) and value.strip() for value in (identifier, source, text)):
-        raise ValueError("Documento exige identifier, source e text não vazios.")
+    valid_ids = isinstance(identifier, str) and identifier.strip()
+    valid_source = isinstance(source, str) and source.strip()
+    if not (valid_ids and valid_source and isinstance(text, str)):
+        raise ValueError("Documento exige identifier e source não vazios e text string.")
     return Document(
         id=identifier, source=source, text=text,
         title=payload.get("title", ""), url=payload.get("url", ""), metadata=metadata,

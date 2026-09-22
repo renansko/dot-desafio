@@ -122,7 +122,7 @@ reindexar; não há monitoramento automático. Para preservar a demonstração, 
 python manage.py runserver
 curl -X POST http://127.0.0.1:8000/api/search/ \
   -H 'Content-Type: application/json' \
-  -d '{"query":"Como guardar dinheiro para imprevistos?","k":1}'
+  -d '{"query":"Como explicar decisões tomadas por modelos de machine learning?","k":1}'
 ```
 
 Exemplo de formato de resposta (score ilustrativo; depende do modelo):

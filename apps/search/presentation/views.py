@@ -36,7 +36,11 @@ class SearchView(APIView):
             "504: timeout remoto; 500: erro interno."
         ),
         examples=[OpenApiExample(
-            "Consulta", value={"query": "Como guardar dinheiro para imprevistos?", "k": 2},
+            "Consulta",
+            value={
+                "query": "Como explicar decisões tomadas por modelos de machine learning?",
+                "k": 2,
+            },
             request_only=True,
         )],
     )

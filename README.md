@@ -24,14 +24,29 @@ Python 3.12+, Django, Django REST Framework, SQLite, LangChain e FAISS.
 ## Executar localmente
 
 ```bash
+# 1. Criar e ativar o ambiente virtual
 python3 -m venv .venv
 source .venv/bin/activate
+
+# 2. Instalar dependências
 python -m pip install -e '.[dev]'
+
+# 3. Configurar variáveis de ambiente
+cp .env.example .env
+# Edite o .env com sua OPENAI_API_KEY se desejar testar OpenAI (chat ou embeddings)
+set -a; source .env; set +a
+
+# 4. Executar migrations do banco SQLite
 python manage.py migrate
+
+# 5. Indexar documentos para a busca semântica (FAISS)
+python manage.py index_documents
+
+# 6. Iniciar o servidor
 python manage.py runserver
 ```
 
-Documentação da API: <http://127.0.0.1:8000/api/docs/>
+Documentação interativa da API (Swagger): <http://127.0.0.1:8000/api/docs/>
 
 Schema OpenAPI: <http://127.0.0.1:8000/api/schema/>
 
@@ -40,12 +55,13 @@ Schema OpenAPI: <http://127.0.0.1:8000/api/schema/>
 | Método | Endpoint | Descrição |
 | --- | --- | --- |
 | `POST` | `/api/books/` | Cadastra um livro |
-| `GET` | `/api/books/` | Lista livros; aceita filtros `title` e `author` |
-| `POST` | `/api/chat/` | Responde perguntas sobre programação Python |
-| `POST` | `/api/search/` | Busca documentos por similaridade semântica |
+| `GET` | `/api/books/` | Lista livros; aceita filtros parciais `title` e `author` |
+| `POST` | `/api/chat/` | Chatbot sobre programação Python (OpenAI ou Anthropic) |
+| `POST` | `/api/search/` | Busca documentos por similaridade semântica (FAISS) |
 
-Exemplo de cadastro e consulta:
+### Exemplos de uso via cURL:
 
+**1. Cadastrar e consultar livros:**
 ```bash
 curl -X POST http://127.0.0.1:8000/api/books/ \
   -H 'Content-Type: application/json' \
@@ -54,15 +70,39 @@ curl -X POST http://127.0.0.1:8000/api/books/ \
 curl 'http://127.0.0.1:8000/api/books/?title=python&author=ana&page=1&page_size=20'
 ```
 
+**2. Chatbot Python (requer OPENAI_API_KEY exportada):**
+```bash
+curl -X POST http://127.0.0.1:8000/api/chat/ \
+  -H 'Content-Type: application/json' \
+  -d '{"question":"Como funciona uma list comprehension em Python?","history":[]}'
+```
+
+**3. Busca Semântica de Documentos (após `index_documents`):**
+```bash
+curl -X POST http://127.0.0.1:8000/api/search/ \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"How can I select informative data points from a data stream?","k":1}'
+```
+
 ## Testes e qualidade
 
 ```bash
 pytest
-ruff check config apps tests/library tests/chat tests/search scripts manage.py
+ruff check config apps tests scripts manage.py
 python manage.py makemigrations --check --dry-run
 ```
 
-Os testes padrão não acessam a rede, não baixam modelos e não exigem credenciais.
+Os testes padrão são rápidos, não acessam a rede, não baixam modelos e não exigem credenciais externas.
+
+### Verificações e demonstrações reais (requerem credenciais/modelos):
+
+```bash
+# Demonstração real da busca semântica (indexa e valida consultas contra expected.json)
+python -m scripts.demo_search
+
+# Demonstração real do chatbot com OpenAI (com o servidor local em execução)
+python -m scripts.demo_chat
+```
 
 ## Estrutura
 

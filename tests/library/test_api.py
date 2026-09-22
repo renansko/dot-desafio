@@ -166,6 +166,10 @@ def test_schema_is_available_and_documents_limits(client):
     )
     parameters = schema["paths"]["/api/books/"]["get"]["parameters"]
     assert {item["name"] for item in parameters} >= {"title", "author", "page", "page_size"}
+    response_schema = schema["paths"]["/api/books/"]["get"]["responses"]["200"][
+        "content"
+    ]["application/json"]["schema"]
+    assert response_schema["$ref"] == "#/components/schemas/BookPage"
 
 
 def test_swagger_ui_is_available(client):

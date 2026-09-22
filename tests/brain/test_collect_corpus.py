@@ -93,3 +93,34 @@ def test_removes_urls_already_stored_or_repeated_in_the_batch():
     documents = new_documents([first, duplicate, new], {"https://example.com/stored"})
 
     assert documents == [first, new]
+
+
+def test_collects_wikipedia_content_in_portuguese():
+    responses = iter(
+        [
+            json.dumps(
+                {
+                    "query": {
+                        "search": [{"pageid": 12345, "title": "Aprendizado por reforço"}]
+                    }
+                }
+            ),
+            "<html><body><p>"
+            "Aprendizado por reforço é uma área de machine learning."
+            "</p></body></html>",
+        ]
+    )
+
+    documents = wikipedia_documents(
+        "aprendizado por reforço",
+        1,
+        sleep_seconds=0,
+        language="pt",
+        opener=lambda *_args, **_kwargs: FakeResponse(next(responses)),
+    )
+
+    assert documents[0].title == "Aprendizado por reforço"
+    assert documents[0].text == "Aprendizado por reforço é uma área de machine learning."
+    assert documents[0].url == "https://pt.wikipedia.org/wiki/Aprendizado_por_refor%C3%A7o"
+    assert documents[0].metadata["language"] == "pt"
+    assert documents[0].metadata["page_id"] == 12345

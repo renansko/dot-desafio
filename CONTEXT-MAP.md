@@ -1,6 +1,6 @@
 # Mapa de contextos
 
-Estado: Q1, Q2 e Q3 implementadas; demonstração real da Q2 pendente de credencial.
+Estado: Q1, Q2 e Q3 implementadas; demonstração real da Q2 validada com OpenAI e LangChain.
 
 | Questão | Contexto | Responsabilidade |
 | --- | --- | --- |

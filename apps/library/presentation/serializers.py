@@ -32,6 +32,13 @@ class BookOutputSerializer(serializers.Serializer):
     summary = serializers.CharField()
 
 
+class BookPageSerializer(serializers.Serializer):
+    count = serializers.IntegerField(min_value=0)
+    next = serializers.URLField(allow_null=True)
+    previous = serializers.URLField(allow_null=True)
+    results = BookOutputSerializer(many=True)
+
+
 class BookFilterSerializer(serializers.Serializer):
     title = StrictCharField(
         max_length=FILTER_MAX_LENGTH, required=False, allow_blank=False, trim_whitespace=True
