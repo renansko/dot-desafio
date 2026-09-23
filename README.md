@@ -55,6 +55,10 @@ python -m scripts.demo_search
 python manage.py runserver
 ```
 
+Os scripts de embeddings mostram a etapa atual antes de carregar o modelo ou reconstruir
+o índice, além do tempo decorrido. As barras dinâmicas do Hugging Face ficam desativadas
+para evitar linhas vazias em terminais WSL.
+
 Documentação interativa da API (Swagger): <http://127.0.0.1:8000/api/docs/>
 
 Schema OpenAPI: <http://127.0.0.1:8000/api/schema/>

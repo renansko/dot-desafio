@@ -124,6 +124,10 @@ python manage.py index_documents
 python -m scripts.demo_search
 ```
 
+Os scripts imprimem cada etapa antes de operações demoradas e mostram o tempo decorrido.
+`prepare_embeddings` desativa barras dinâmicas do Hugging Face, que podem aparecer como
+várias linhas vazias em terminais WSL.
+
 A demonstração reconstrói o índice configurado, usa o comando e a API DRF no mesmo processo,
 imprime scores e falha se o primeiro resultado divergir de `expected.json`. As consultas
 avaliam associação semântica, não apenas coincidência literal. `expected_id` registra
