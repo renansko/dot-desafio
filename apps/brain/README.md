@@ -27,7 +27,10 @@ O padrão de 3 segundos entre temas limita a pressão sobre a API do arXiv. A
 coleta é uma demonstração com rede; os testes usam respostas simuladas.
 
 O indexador da Q3 lê esses JSONs diretamente; não é necessário convertê-los
-para `.txt`. `expected.json` contém consultas semânticas para a demonstração.
+para `.txt`. Os 23 documentos atuais são versionados. `expected.json` contém
+consultas semânticas para a demonstração: `expected_id` é a expectativa com
+OpenAI; `expected_id_local` substitui essa expectativa quando o modelo local
+retorna outro documento.
 
 Para completar um diretório até uma quantidade exata sem repetir URLs já
 armazenadas, acrescente `--target-total`. Por exemplo, para chegar a 50:

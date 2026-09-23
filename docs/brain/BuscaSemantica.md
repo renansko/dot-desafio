@@ -12,5 +12,8 @@ Uma reconstrução é publicada atomicamente, preservando o índice anterior em 
 
 O corpus, a preparação de embeddings, os limites e o contrato HTTP estão em
 [CONTEXT.md](../../apps/search/CONTEXT.md).
+O corpus de 23 documentos e `expected.json` são versionados. A demonstração
+reconstrói o índice e compara cada consulta com o ID esperado para o provedor
+configurado; um resultado local difere do resultado observado com OpenAI.
 O contrato OpenAPI de `/api/search/` distingue os status 200, 400, 503, 504 e 500 por
 descrição e exemplo; todos os erros mantêm o campo `detail` com mensagem pública segura.

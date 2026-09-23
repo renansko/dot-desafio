@@ -9,7 +9,8 @@
   },
   {
     "query": "How can decisions made by machine learning models be explained?",
-    "expected_id": "arxiv:2304.02381v2"
+    "expected_id": "arxiv:2304.02381v2",
+    "expected_id_local": "wikipedia:233488"
   },
   {
     "query": "O que é aprendizagem por reforço e quais seus algoritmos?",

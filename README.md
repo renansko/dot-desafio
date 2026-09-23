@@ -28,19 +28,28 @@ Python 3.12+, Django, Django REST Framework, SQLite, LangChain e FAISS.
 python3 -m venv .venv
 source .venv/bin/activate
 
-# 2. Instalar dependências
-python -m pip install -e '.[dev]'
+# 2. Instalar dependências para os embeddings locais em CPU
+python -m pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cpu
+python -m pip install -e '.[dev,local-embeddings]'
 
 # 3. Configurar variáveis de ambiente
 cp .env.example .env
-# Edite o .env com sua OPENAI_API_KEY se desejar testar OpenAI (chat ou embeddings)
+# Edite o .env com sua OPENAI_API_KEY somente se desejar testar OpenAI
 set -a; source .env; set +a
+# A amostra .env seleciona OpenAI para embeddings; escolha o modelo local para
+# reproduzir a demonstração da Q3 sem chave de API.
+export EMBEDDING_PROVIDER=local
+export EMBEDDING_MODEL=sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+# Revisão usada para verificar os IDs esperados abaixo
+export EMBEDDING_REVISION=e8f8c211226b894fcb81acc59f3b34ba3efd5f42
 
 # 4. Executar migrations do banco SQLite
 python manage.py migrate
 
-# 5. Indexar documentos para a busca semântica (FAISS)
-python manage.py index_documents
+# 5. Baixar explicitamente o modelo local (requer rede), depois gerar os
+# embeddings dos documentos versionados e conferir os seis resultados da Q3
+python -m scripts.prepare_embeddings
+python -m scripts.demo_search
 
 # 6. Iniciar o servidor
 python manage.py runserver
@@ -146,6 +155,12 @@ avaliador configurado.
 embeddings por LangChain, persiste vetores e metadados em FAISS e expõe documentos únicos
 ordenados por similaridade em `POST /api/search/`.
 
+O repositório já inclui [23 artigos e resumos em JSON](apps/brain/documents/),
+coletados da Wikipedia e do arXiv. O campo `text` de cada arquivo contém o texto a
+ser indexado; não é necessário coletar documentos nem criar arquivos `.txt` para
+reproduzir a demonstração. Esses arquivos são a entrada padrão de
+`python manage.py index_documents`.
+
 ```mermaid
 flowchart LR
     CORPUS["Corpus JSON"] --> SPLIT["Trechos de 400 caracteres<br/>overlap de 60"]
@@ -159,16 +174,28 @@ flowchart LR
 
 O padrão local é `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`
 (384 dimensões, CPU); a alternativa OpenAI é `text-embedding-3-small` (1536 dimensões).
+O passo a passo fixa a revisão do modelo local usada para conferir os IDs da demonstração.
 Como os vetores são normalizados, o produto interno equivale à similaridade de cosseno.
 Mudar corpus, modelo, provedor ou splitter exige reconstruir o índice.
 
-#### Como demonstrar a busca semântica
+#### Como gerar os embeddings e demonstrar a busca semântica
+
+O passo 5 de [instalação local](#executar-localmente) lê os 23 JSONs versionados,
+divide seus textos, gera os embeddings com o modelo local preparado e grava
+`var/search/index.zip`. A primeira preparação do modelo requer rede e espaço
+em disco; a indexação posterior usa o cache local. Para apenas gerar o índice,
+sem conferir as consultas, execute `python manage.py index_documents`.
 
 O comando `python -m scripts.demo_search` reconstrói o índice, consulta a API real no
 mesmo processo e compara o primeiro resultado de cada busca com
 [`apps/brain/expected.json`](apps/brain/expected.json). Para cada caso, imprime status,
 documento, score de similaridade, URL e o trecho mais relevante; qualquer divergência
 encerra o processo com erro.
+Execute a demonstração com as mesmas variáveis `EMBEDDING_PROVIDER` e
+`EMBEDDING_MODEL` usadas na indexação. Ela gera novamente os embeddings antes das
+consultas; não depende de um índice pré-gerado no repositório. O arquivo de
+expectativas registra um ID específico para o modelo local quando ele difere do
+resultado observado com OpenAI.
 
 ```mermaid
 sequenceDiagram
@@ -183,7 +210,7 @@ sequenceDiagram
     loop Cada consulta esperada
         CLI->>API: query + k igual a 1
         API-->>CLI: Documento + score + trecho
-        CLI->>EXP: Comparar result.id com expected_id
+        CLI->>EXP: Comparar result.id com ID esperado do provedor
     end
     CLI-->>A: Total de acertos ou erro nas divergências
 ```
@@ -194,13 +221,17 @@ sequenceDiagram
 | “Como funciona o ajuste fino com feedback humano no ChatGPT?” | `wikipedia-d2ca97f062fd.json` — ChatGPT | `wikipedia:7021469` | Relação entre LLM e RLHF |
 | “Quais são as redes neurais multicamadas na aprendizagem profunda?” | `wikipedia-54498ddd50d7.json` — Aprendizagem profunda | `wikipedia:5219411` | Deep learning, CNNs e aproximação universal |
 | “How can I select informative data points from a data stream?” | `arxiv-45f7d7029bdf.json` — Active learning for data streams | `arxiv:2302.08893v4` | Busca em inglês e capacidade multilíngue do modelo |
+| “How do learning curves help choose a machine learning model?” | `arxiv-4919f6a8cb37.json` — Learning Curves for Decision Making in Supervised Machine Learning | `arxiv:2201.12150v2` | Curvas de aprendizagem |
+| “How can decisions made by machine learning models be explained?” | `wikipedia-ce155af0fb1c.json` — Machine learning | `wikipedia:233488` | Explicabilidade com o modelo local; OpenAI retorna `arxiv:2304.02381v2` |
 
 Os hashes identificam os arquivos coletados; o contrato HTTP retorna os identificadores
-estáveis da terceira coluna. O arquivo de expectativas pode conter casos adicionais de
+estáveis da terceira coluna para o modelo local. Com OpenAI, a última consulta retorna o
+ID indicado na quarta coluna. O arquivo de expectativas pode conter casos adicionais de
 regressão.
 
 ```bash
-# Após preparar o modelo local conforme apps/search/CONTEXT.md
+# Após instalar dependências e preparar o modelo local conforme acima;
+# este comando reconstrói o índice e confere as seis consultas
 python -m scripts.demo_search
 
 # Consulta manual após a indexação

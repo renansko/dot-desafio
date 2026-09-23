@@ -13,3 +13,4 @@ Registro no formato `data | issue/PR | escopo`.
 2026-09-22 | issue #3 | descrições e exemplos das respostas OpenAPI da busca semântica
 
 2026-09-22 | Q2 / #2 | Comando eval_chat, conjunto sintético, metas independentes e workflow de avaliação real.
+2026-09-22 | Q3 / #3 | README de preparação do corpus versionado e expectativa da demonstração por provedor de embeddings.

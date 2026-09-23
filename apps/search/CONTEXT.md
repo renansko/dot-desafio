@@ -126,13 +126,16 @@ python -m scripts.demo_search
 
 A demonstração reconstrói o índice configurado, usa o comando e a API DRF no mesmo processo,
 imprime scores e falha se o primeiro resultado divergir de `expected.json`. As consultas
-avaliam associação semântica, não apenas coincidência literal:
+avaliam associação semântica, não apenas coincidência literal. `expected_id` registra
+o resultado observado com OpenAI; `expected_id_local` substitui esse ID quando o modelo
+local retorna outro documento. O roteiro do README fixa a revisão local
+`e8f8c211226b894fcb81acc59f3b34ba3efd5f42` usada na verificação:
 
 | Consulta | Primeiro documento esperado |
 | --- | --- |
 | How can I select informative data points from a data stream? | `arxiv:2302.08893v4` |
 | How do learning curves help choose a machine learning model? | `arxiv:2201.12150v2` |
-| How can decisions made by machine learning models be explained? | `arxiv:2304.02381v2` |
+| How can decisions made by machine learning models be explained? | `wikipedia:233488` com modelo local; `arxiv:2304.02381v2` com OpenAI |
 
 Alternativa OpenAI, com `OPENAI_API_KEY` exportada no shell:
 
