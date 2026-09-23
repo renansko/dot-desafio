@@ -1,6 +1,6 @@
 from dataclasses import asdict
 
-from drf_spectacular.utils import OpenApiExample, extend_schema
+from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -25,8 +25,43 @@ class SearchView(APIView):
     @extend_schema(
         request=SearchInputSerializer,
         responses={
-            200: SearchOutputSerializer, 400: SearchErrorSerializer,
-            503: SearchErrorSerializer, 504: SearchErrorSerializer, 500: SearchErrorSerializer,
+            200: OpenApiResponse(
+                response=SearchOutputSerializer,
+                description="Documentos únicos ordenados por relevância.",
+                examples=[OpenApiExample("Resultado", value={"results": [{
+                    "id": "doc-1", "source": "wikipedia", "snippet": "Modelos aprendem com dados.",
+                    "score": 0.82, "title": "Aprendizado de máquina",
+                    "url": "https://example.org/doc-1", "metadata": {"language": "pt"},
+                }]})],
+            ),
+            400: OpenApiResponse(
+                response=SearchErrorSerializer,
+                description="Consulta ou quantidade inválida.",
+                examples=[OpenApiExample(
+                    "Entrada inválida", value={"detail": "Consulta ou quantidade inválida."},
+                )],
+            ),
+            503: OpenApiResponse(
+                response=SearchErrorSerializer,
+                description="Índice, modelo ou outra dependência indisponível ou incompatível.",
+                examples=[OpenApiExample(
+                    "Dependência indisponível", value={"detail": "Dependência indisponível."},
+                )],
+            ),
+            504: OpenApiResponse(
+                response=SearchErrorSerializer,
+                description="Tempo limite excedido ao acessar dependência externa.",
+                examples=[OpenApiExample(
+                    "Tempo limite", value={"detail": "Tempo limite da dependência excedido."},
+                )],
+            ),
+            500: OpenApiResponse(
+                response=SearchErrorSerializer,
+                description="Erro interno inesperado; detalhes internos não são expostos.",
+                examples=[OpenApiExample(
+                    "Erro interno", value={"detail": "Erro interno do servidor."},
+                )],
+            ),
         },
         description=(
             "Busca semântica: query não vazia, até 2000 caracteres; k inteiro de 1 a 20 "

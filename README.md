@@ -136,7 +136,9 @@ provedor definido em `CHAT_PROVIDER`. Uma pergunta aceita realiza uma avaliaçã
 geração. A classificação reduz o risco, mas não garante proteção absoluta. Contratos,
 limites e demonstração real estão no [contexto do chatbot](apps/chat/CONTEXT.md) e na
 [camada de confiança](docs/brain/conventions/ChatTrustLayer.md). A comprovação offline é
-`pytest tests/chat`; a integração real é `python -m scripts.demo_chat`.
+`pytest tests/chat`; a integração real é `python -m scripts.demo_chat`. A suíte exploratória
+rotulada também pode ser executada com `python manage.py eval_chat`, usando credenciais do
+avaliador configurado.
 
 ### Questão 3 — Busca semântica de documentos
 
@@ -255,6 +257,31 @@ Veja [contratos e limites da avaliação](docs/brain/conventions/ChatTrustLayer.
 As decisões ficam no stdout e em `var/log/chat-decisions.log`; use
 `tail -f var/log/chat-decisions.log` para confirmar `evaluator=typesafe`.
 
+## Extra opcional — avaliação do classificador (fora das questões)
+
+Além das entregas Q1–Q3, há um comando exploratório para medir o classificador do
+chat em 100 casos sintéticos rotulados. Ele não é requisito das questões, não gera
+respostas e não mede RAG. Os testes offline não fazem chamadas externas; esta
+avaliação real é opcional e pode enviar os casos ao provedor configurado.
+
+```bash
+python manage.py eval_chat
+```
+
+Com Jev configurado, uma execução faz aproximadamente 100 chamadas de classificação,
+com duas perguntas Noul em paralelo por caso. Como referência, a LangChain reportou
+US$ 0,00035 por chamada em um experimento, o que dá cerca de **US$ 0,035 (3,5 centavos)
+para 100 chamadas**. É apenas uma estimativa: custo real depende do tamanho dos estados
+(perguntas e históricos), da tarifa vigente e da conta TypeSafe. A TypeSafe publica
+US$ 0,042 por milhão de tokens de entrada e saída gratuita; não há como calcular o
+total exato sem medir os tokens enviados. Se o comando usar OpenAI ou Anthropic em vez
+de Jev, o custo depende do modelo escolhido e pode ser diferente.
+
+O workflow GitHub está configurado para disparo manual e exige credenciais; não roda
+na suíte padrão nem automaticamente. Veja o [guia da avaliação, conjunto, metas e
+relatório](evaluation/README.md). Referências de custo: [experimento da LangChain](https://www.langchain.com/blog/jev-agent-evals-langsmith)
+e [preços publicados pela TypeSafe](https://typesafe.ai/blog/introducing-system-one-models-and-jev).
+
 ## Embeddings e Vector Store
 
 O comando `index_documents` transforma o corpus local em um artefato FAISS pesquisável.
@@ -317,6 +344,7 @@ python -m scripts.demo_chat
 
 ## Documentação
 
+- [Dificuldades e limitações observadas](docs/dificuldades.md)
 - [Mapa dos módulos](CONTEXT-MAP.md)
 - [Contexto da biblioteca](apps/library/CONTEXT.md)
 - [Contexto do chatbot](apps/chat/CONTEXT.md)

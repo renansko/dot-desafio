@@ -1,0 +1,40 @@
+name: Chat evaluation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eval-chat-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  classifier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    environment: chat-evaluation
+    env:
+      CHAT_PROVIDER: ${{ vars.CHAT_PROVIDER || 'openai' }}
+      CHAT_MODEL: ${{ vars.CHAT_MODEL }}
+      TYPESAFE_MODEL: ${{ vars.TYPESAFE_MODEL || 'jev-latest' }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      TYPESAFE_API_KEY: ${{ secrets.TYPESAFE_API_KEY }}
+      LANGSMITH_TRACING: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: python -m pip install -e .
+      - run: python manage.py eval_chat --min-accuracy 0.95
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: chat-evaluation-${{ github.run_id }}-${{ github.run_attempt }}
+          path: var/evaluation/chat.json
+          if-no-files-found: warn
+          retention-days: 30

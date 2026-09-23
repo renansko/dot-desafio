@@ -137,9 +137,16 @@ def test_index_command_persists_and_reopens(tmp_path, monkeypatch):
         "apps.search.management.commands.index_documents.LangChainEmbeddings",
         lambda config: DeterministicEmbeddings(),
     )
+    corpus_dir = tmp_path / "corpus"
+    corpus_dir.mkdir()
+    for i in range(3):
+        (corpus_dir / f"doc_{i}.json").write_text(json.dumps({
+            "identifier": f"doc:{i}", "source": "test", "title": f"Doc {i}",
+            "text": f"alpha content {i}", "url": f"https://example.test/{i}", "metadata": {},
+        }))
     output = StringIO()
-    call_command("index_documents", stdout=output)
-    assert "documentos" in output.getvalue() and "trechos indexados" in output.getvalue()
+    call_command("index_documents", corpus=str(corpus_dir), stdout=output)
+    assert "3 documentos" in output.getvalue() and "3 trechos indexados" in output.getvalue()
     config = load_config()
     assert len(FaissIndex(config.path).open(config.spec).rank([1, 0])) == 3
 

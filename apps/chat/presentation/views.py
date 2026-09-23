@@ -4,6 +4,7 @@ from rest_framework.views import APIView
 
 from apps.chat.application.errors import InvalidChat
 from apps.chat.application.use_cases import AskPython, Message
+from apps.chat.infrastructure.classification import create_classifier
 from apps.chat.infrastructure.providers import create_provider
 from apps.chat.infrastructure.settings import load_limits
 from apps.chat.presentation.serializers import (
@@ -26,6 +27,8 @@ class ChatView(APIView):
         description=(
             "Chat Python sem persistência. Limites padrão: pergunta/mensagem 4000 caracteres, "
             "20 mensagens e 16000 caracteres totais; configuráveis por CHAT_MAX_*. "
+            "Avaliação prévia de escopo Python e risco de injeção. Recusas retornam 200 "
+            "com answer fixo, sem geração. Falhas da avaliação bloqueiam a geração. "
             "400: entrada inválida; 503: configuração/provedor indisponível; "
             "504: timeout; 500: erro interno."
         ),
@@ -44,7 +47,9 @@ class ChatView(APIView):
         values = serializer.validated_data
         history = [Message(**message) for message in values["history"]]
         try:
-            answer = AskPython(LazyProvider(), load_limits()).execute(values["question"], history)
+            answer = AskPython(LazyProvider(), load_limits(), classifier=LazyClassifier()).execute(
+                values["question"], history
+            )
         except InvalidChat as exc:
             return Response({"detail": str(exc)}, status=400)
         return Response({"answer": answer})
@@ -54,3 +59,9 @@ class LazyProvider:
     def answer(self, system, messages):
         # Validate input before requiring credentials or constructing any external client.
         return create_provider().answer(system, messages)
+
+
+class LazyClassifier:
+    def classify(self, messages):
+        # Apply input limits before constructing or invoking the evaluator, too.
+        return create_classifier().classify(messages)
